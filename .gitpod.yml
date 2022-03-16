@@ -1,0 +1,6 @@
+tasks:
+  - init: |
+      go install ./...
+vscode:
+  extensions:
+    - golang.go
