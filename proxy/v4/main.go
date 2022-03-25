@@ -160,7 +160,7 @@ func connect(reader *bufio.Reader, conn net.Conn) (err error) {
 	// VER socks版本，这里为0x05
 	// REP Relay field,内容取值如下 X’00’ succeeded
 	// RSV 保留字段
-	// ATYPE 同请求的ATYPE
+	// ATYPE 地址类型
 	// BND.ADDR 服务绑定的地址
 	// BND.PORT 服务绑定的端口DST.PORT
 	_, err = conn.Write([]byte{0x05, 0x00, 0x00, 0x01, 0, 0, 0, 0, 0, 0})
