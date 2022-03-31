@@ -89,7 +89,7 @@ func query(word string) {
 		log.Fatal(err)
 	}
 	if resp.StatusCode != 200 {
-		log.Fatal("bad StatusCode:", resp.StatusCode, "err", err)
+		log.Fatal("bad StatusCode:", resp.StatusCode, "body", string(bodyText))
 	}
 	var dictResponse DictResponse
 	err = json.Unmarshal(bodyText, &dictResponse)
