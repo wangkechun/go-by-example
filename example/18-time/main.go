@@ -20,5 +20,6 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	fmt.Println(t3 == t) // true
+	fmt.Println(t3 == t)    // true
+	fmt.Println(now.Unix()) // 1648738080
 }
