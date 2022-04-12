@@ -7,7 +7,7 @@ import (
 
 type userInfo struct {
 	Name  string
-	Age   int
+	Age   int `json:"age"`
 	Hobby []string
 }
 
@@ -18,7 +18,7 @@ func main() {
 		panic(err)
 	}
 	fmt.Println(buf)         // [123 34 78 97...]
-	fmt.Println(string(buf)) // {"Name":"wang","Age":18,"Hobby":["Golang","TypeScript"]}
+	fmt.Println(string(buf)) // {"Name":"wang","age":18,"Hobby":["Golang","TypeScript"]}
 
 	buf, err = json.MarshalIndent(a, "", "\t")
 	if err != nil {
