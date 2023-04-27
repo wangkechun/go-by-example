@@ -13,7 +13,7 @@ import (
 
 const socks5Ver = 0x05
 const cmdBind = 0x01
-const atypIPV4 = 0x01
+const atypeIPV4 = 0x01
 const atypeHOST = 0x03
 const atypeIPV6 = 0x04
 
@@ -113,11 +113,11 @@ func connect(reader *bufio.Reader, conn net.Conn) (err error) {
 		return fmt.Errorf("not supported ver:%v", ver)
 	}
 	if cmd != cmdBind {
-		return fmt.Errorf("not supported cmd:%v", ver)
+		return fmt.Errorf("not supported cmd:%v", cmd)
 	}
 	addr := ""
 	switch atyp {
-	case atypIPV4:
+	case atypeIPV4:
 		_, err = io.ReadFull(reader, buf)
 		if err != nil {
 			return fmt.Errorf("read atyp failed:%w", err)
