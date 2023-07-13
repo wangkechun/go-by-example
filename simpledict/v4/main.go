@@ -10,215 +10,89 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"sync"
 )
 
-type BaiduDictRequest struct {
-	From            string `json:"from"`
-	To              string `json:"to"`
-	Query           string `json:"query"`
-	TransType       string `json:"transtype"`
-	Token           string `json:"token"`
-	SimpleMeansFlag string `json:"simple_means_flag"`
-	Sign            string `json:"sign"`
-	Domain          string `json:"domain"`
-	Ts              string `json:"ts"`
+const (
+	SUCCESS = 0
+)
+
+type FanYiGoRequest struct {
+	Word       string `json:"word"`
+	DeviceType string `json:"deviceType"`
+	DeviceId   string `json:"deviceId"`
 }
 
-type BaiduDictRespond struct {
-	TransResult struct {
-		Data []struct {
-			Dst string `json:"dst"`
-			Src string `json:"src"`
-		} `json:"data"`
-		From     string `json:"from"`
-		To       string `json:"to"`
-		Status   int    `json:"status"`
-		Type     int    `json:"type"`
-		Phonetic []struct {
-			SrcStr string `json:"src_str"`
-			TrgStr string `json:"trg_str"`
-		} `json:"phonetic"`
-	} `json:"trans_result"`
-	DictResult struct {
-		Edict struct {
-			Item []struct {
-				TrGroup []struct {
-					Tr          []string `json:"tr"`
-					Example     []string `json:"example"`
-					SimilarWord []string `json:"similar_word"`
-				} `json:"tr_group"`
-				Pos string `json:"pos"`
-			} `json:"item"`
-			Word string `json:"word"`
-		} `json:"edict"`
-		From        string `json:"from"`
-		SimpleMeans struct {
-			WordName  string   `json:"word_name"`
-			From      string   `json:"from"`
-			WordMeans []string `json:"word_means"`
-			Exchange  struct {
-				WordThird []string `json:"word_third"`
-				WordIng   []string `json:"word_ing"`
-				WordDone  []string `json:"word_done"`
-				WordPast  []string `json:"word_past"`
-			} `json:"exchange"`
-			Tags struct {
-				Core  []string `json:"core"`
-				Other []string `json:"other"`
-			} `json:"tags"`
-			MemorySkill string `json:"memory_skill"`
-			Symbols     []struct {
-				PhEn  string `json:"ph_en"`
-				PhAm  string `json:"ph_am"`
-				Parts []struct {
-					Part  string   `json:"part"`
-					Means []string `json:"means"`
-				} `json:"parts"`
-				PhOther string `json:"ph_other"`
-			} `json:"symbols"`
-		} `json:"simple_means"`
-		Common struct {
-			Text string `json:"text"`
-			From string `json:"from"`
-		} `json:"common"`
-		Collins struct {
-			Entry []struct {
-				EntryID string `json:"entry_id"`
-				Type    string `json:"type"`
-				Value   []struct {
-					MeanType []struct {
-						InfoType string `json:"info_type"`
-						InfoID   string `json:"info_id"`
-						Example  []struct {
-							ExampleID string `json:"example_id"`
-							TtsSize   string `json:"tts_size"`
-							Tran      string `json:"tran"`
-							Ex        string `json:"ex"`
-							TtsMp3    string `json:"tts_mp3"`
-						} `json:"example"`
-					} `json:"mean_type"`
-					Gramarinfo []struct {
-						Tran  string `json:"tran"`
-						Type  string `json:"type"`
-						Label string `json:"label"`
-					} `json:"gramarinfo"`
-					Tran   string `json:"tran"`
-					Def    string `json:"def"`
-					MeanID string `json:"mean_id"`
-					Posp   []struct {
-						Label string `json:"label"`
-					} `json:"posp"`
-				} `json:"value"`
-			} `json:"entry"`
-			WordName      string `json:"word_name"`
-			Frequence     string `json:"frequence"`
-			WordEmphasize string `json:"word_emphasize"`
-			WordID        string `json:"word_id"`
-		} `json:"collins"`
-		Lang   string `json:"lang"`
-		Oxford struct {
-			Entry []struct {
-				Tag  string `json:"tag"`
-				Name string `json:"name"`
-				Data []struct {
-					Tag  string `json:"tag"`
-					Data []struct {
-						Tag   string `json:"tag"`
-						P     string `json:"p"`
-						PText string `json:"p_text"`
-					} `json:"data"`
-				} `json:"data"`
-			} `json:"entry"`
-			Unbox string `json:"unbox"`
-		} `json:"oxford"`
-		Usecase struct {
-			Idiom []struct {
-				P    string `json:"p"`
-				Tag  string `json:"tag"`
-				Data []struct {
-					Tag  string `json:"tag"`
-					Data []struct {
-						EnText string `json:"enText,omitempty"`
-						Tag    string `json:"tag"`
-						ChText string `json:"chText,omitempty"`
-						Data   []struct {
-							EnText string `json:"enText"`
-							Tag    string `json:"tag"`
-							ChText string `json:"chText"`
-							Before []struct {
-								Tag  string `json:"tag"`
-								Data []struct {
-									RText string `json:"r_text"`
-									R     string `json:"r"`
-									Tag   string `json:"tag"`
-								} `json:"data"`
-							} `json:"before,omitempty"`
-						} `json:"data,omitempty"`
-						N string `json:"n,omitempty"`
-					} `json:"data"`
-				} `json:"data"`
-			} `json:"idiom"`
-		} `json:"usecase"`
-		BaiduPhrase []struct {
-			Tit   []string `json:"tit"`
-			Trans []string `json:"trans"`
-		} `json:"baidu_phrase"`
-		Rootsaffixes []struct {
-			Indicate string `json:"indicate"`
-			Type     string `json:"type"`
-			Meanings []struct {
-				Td    string `json:"td"`
-				Words []struct {
-					H             string `json:"h"`
-					PartsOfSpeech []struct {
-						P   string `json:"p"`
-						Dec string `json:"dec"`
-						D   string `json:"d"`
-					} `json:"partsOfSpeech"`
-				} `json:"words"`
-			} `json:"meanings"`
-			Title string `json:"title"`
-		} `json:"rootsaffixes"`
-		Sanyms []struct {
-			Tit  string `json:"tit"`
-			Type string `json:"type"`
-			Data []struct {
-				P string   `json:"p"`
-				D []string `json:"d"`
-			} `json:"data"`
-		} `json:"sanyms"`
-		QueryExplainVideo struct {
-			ID           int    `json:"id"`
-			UserID       string `json:"user_id"`
-			UserName     string `json:"user_name"`
-			UserPic      string `json:"user_pic"`
-			Query        string `json:"query"`
-			Direction    string `json:"direction"`
-			Type         string `json:"type"`
-			Tag          string `json:"tag"`
-			Detail       string `json:"detail"`
-			Status       string `json:"status"`
-			SearchType   string `json:"search_type"`
-			FeedURL      string `json:"feed_url"`
-			Likes        string `json:"likes"`
-			Plays        string `json:"plays"`
-			CreatedAt    string `json:"created_at"`
-			UpdatedAt    string `json:"updated_at"`
-			DuplicateID  string `json:"duplicate_id"`
-			RejectReason string `json:"reject_reason"`
-			CoverURL     string `json:"coverUrl"`
-			VideoURL     string `json:"videoUrl"`
-			ThumbURL     string `json:"thumbUrl"`
-			VideoTime    string `json:"videoTime"`
-			VideoType    string `json:"videoType"`
-		} `json:"queryExplainVideo"`
-	} `json:"dict_result"`
-	LijuResult struct {
-		Double string   `json:"double"`
-		Tag    []string `json:"tag"`
-		Single string   `json:"single"`
-	} `json:"liju_result"`
-	Logid int `json:"logid"`
+type FanYiGoRespond struct {
+	Msg  string `json:"msg"`
+	Code int    `json:"code"`
+	Data struct {
+		Dict struct {
+			Base struct {
+				Explain struct {
+					WordMeans []struct {
+						Part  string   `json:"part"`
+						Means []string `json:"means"`
+					} `json:"word_means"`
+					CaseWord []string `json:"case_word"`
+				} `json:"explain"`
+				ExplainZh string `json:"explain_zh"`
+				Exchange  struct {
+					WordIng   []string      `json:"word_ing"`
+					WordDone  []string      `json:"word_done"`
+					WordPast  []string      `json:"word_past"`
+					WordThird []string      `json:"word_third"`
+					WordPl    []interface{} `json:"word_pl"`
+				} `json:"exchange"`
+				PronZh string `json:"pron_zh"`
+				PronAm struct {
+					Text      string `json:"text"`
+					Pronounce string `json:"pronounce"`
+				} `json:"pron_am"`
+				PronEn struct {
+					Text      string `json:"text"`
+					Pronounce string `json:"pronounce"`
+				} `json:"pron_en"`
+				Word    string `json:"word"`
+				Chinese bool   `json:"chinese"`
+			} `json:"base"`
+			PracticalSentences []interface{} `json:"practical_sentences"`
+			TrueSentences      []struct {
+				Tag       string        `json:"tag"`
+				Sentences []interface{} `json:"sentences"`
+			} `json:"true_sentences"`
+			EeMeans      []interface{} `json:"ee_means"`
+			RootsAffixes []interface{} `json:"roots_affixes"`
+			Phrases      []interface{} `json:"phrases"`
+			Synonym      []struct {
+				Part      string `json:"part"`
+				WordMeans []struct {
+					Mean  string   `json:"mean"`
+					Words []string `json:"words"`
+				} `json:"word_means"`
+			} `json:"synonym"`
+			Antonym []struct {
+				Part      string `json:"part"`
+				WordMeans []struct {
+					Mean  string   `json:"mean"`
+					Words []string `json:"words"`
+				} `json:"word_means"`
+			} `json:"antonym"`
+			IndustryDict   []interface{} `json:"industry_dict"`
+			SynonymExplain []interface{} `json:"synonym_explain"`
+			Collins        []struct {
+				Entries []struct {
+					Define    string `json:"define"`
+					Trans     string `json:"trans"`
+					Part      string `json:"part"`
+					Sentences []struct {
+						Origin string `json:"origin"`
+						Trans  string `json:"trans"`
+					} `json:"sentences"`
+				} `json:"entries"`
+			} `json:"collins"`
+		} `json:"dict"`
+	} `json:"data"`
 }
 
 type CaiYunDictRequest struct {
@@ -260,25 +134,28 @@ type CaiYunDictResponse struct {
 	} `json:"dictionary"`
 }
 
-func BaiduQuery(word string) {
+func FanYiGoQuery(word string, wg *sync.WaitGroup, mutex *sync.Mutex) {
+	defer func() {
+		wg.Done()
+		fmt.Println("-------------------------------------------")
+		mutex.Unlock()
+	}()
 	client := &http.Client{}
-	request := BaiduDictRequest{From: "en", To: "zh", Query: word, TransType: "realtime",
-		Token: "a007abed6d9b945ed01cf208df2874dd", SimpleMeansFlag: "3", Sign: "229916.483629", Domain: "common", Ts: "1689218191036"}
+	request := FanYiGoRequest{Word: word, DeviceId: "a132e3a425ba0e88e7f89e4a81333a7e", DeviceType: "web"}
 	urlCodeStr := tools.ConvertStruct2UrlCode(request)
 
 	var data = bytes.NewReader([]byte(urlCodeStr))
-	req, err := http.NewRequest("POST", "https://fanyi.baidu.com/v2transapi?from=en&to=zh", data)
+	req, err := http.NewRequest("POST", "https://open.qingxun.com/apiConsole/dict/search", data)
 	if err != nil {
 		log.Fatal(err)
 	}
-	req.Header.Set("Accept", "*/*")
+	req.Header.Set("Accept", "application/json, text/javascript, */*; q=0.01")
 	req.Header.Set("Accept-Language", "zh-CN,zh;q=0.9")
-	req.Header.Set("Acs-Token", "1689218179799_1689218191049_oWf74w9iiFtu0d1P2auAv4FjVKLJJV2d6VimFYMeFwzXox9LrsX4cIIS73SfnGj/IV90+/Rpy0lX2irlz5QgI1V/xIh7xe8/sW9pYbgo2up1HaLiolWOp7QESS2URs1WyZ5eeeUebZPVAzJdS1jTQm7ZAJMr4/8JZPeNNfDQKGEhX9IjKFZtHpoOryxo9w0DIGnpJYeVuAoFPDFz3RBh6t60LjIF7U65c4i3VYbL95pToPbunNkTArRtz8IvuZmpMOUChMb5PfXY4IBCV98S4XzI6n/edYkzS1nSXFmlJJa9tXFCSmNUppQbx/7tnfkNdbrcx93VfTgOpD1OUyYj/aSrleYLPuoivPPtPk2pkTddzmsHB8XwDbFsNq1Npnx4TWwTIpnEfijq5L22zgbb+5XHWek2VqVmpaeC/io+TQoOABYo38UgvwYTBfokYY5gfjT/GbJldL/zBmPDSqKrD5+N5f4M74AlGmYkWxK7wgsw4+S6V4+pnT9mJCqZAUFH")
 	req.Header.Set("Connection", "keep-alive")
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8")
-	req.Header.Set("Cookie", "BIDUPSID=D803FB9891CC21AEB6D1A4B3402C7B91; PSTM=1688961652; BAIDUID=D803FB9891CC21AE6B6452F739AFF584:FG=1; BDORZ=B490B5EBF6F3CD402E515D22BCDA1598; BA_HECTOR=a50g2ka0a02l8h8k00242l8f1iat6bt1o; delPer=0; ZFY=eFo7Beo:B:AXRLKIetzlpqLzYBADhzPvaCSqan1i6yZ1I:C; BAIDUID_BFESS=D803FB9891CC21AE6B6452F739AFF584:FG=1; PSINO=3; H_PS_PSSID=36542_38642_38831_39027_39023_38942_38880_38958_38955_39009_38960_38916_38816_39064_39089_38636_26350_39095; Hm_lvt_64ecd82404c51e03dc91cb9e8c025574=1689218179; Hm_lpvt_64ecd82404c51e03dc91cb9e8c025574=1689218179; REALTIME_TRANS_SWITCH=1; FANYI_WORD_SWITCH=1; HISTORY_SWITCH=1; SOUND_SPD_SWITCH=1; SOUND_PREFER_SWITCH=1; ab_sr=1.0.1_OWQ3NzFjOTE5YzJlYjRkMWIxMmRhMmU0NzNhMGYzNzY4MjQ0ODg1MThhZDRiYjk0ZDk4Y2ZiMzQ3ZTk3YjlkNTg3OWJjZjBmOGU2ZDM3ZGRlOWFhY2E5OTMyNWIzMWJlNGMwN2YyNTAzYTZlNjI5NzkzNGY0MzQ4MTllNmYyMmU1MzZmZDJlYWY0NDk1YmRjZjY4YTZkMGVmNTgwMWVhOA==")
-	req.Header.Set("Origin", "https://fanyi.baidu.com")
-	req.Header.Set("Referer", "https://fanyi.baidu.com/?aldtype=16047")
+	req.Header.Set("Cookie", "acw_tc=2f624a2216892361198977971e07bfd1bd6953db1c523c88d8504a2ed651e0; UM_distinctid=1894e51a16243a-0d01c6ecf85be3-1b525634-1fa400-1894e51a1639f2; CNZZDATA1281143543=2007567745-1689234597-https%253A%252F%252Fwww.baidu.com%252F%7C1689234597; Hm_lvt_4155e261820146fa5d82a7049a03a46a=1689236120; promotionSource=https://open.qingxun.com/#baiduqx03-apifw-fyapi-fyapi1?bd_vid=11127669222185401009; DeviceId=a132e3a425ba0e88e7f89e4a81333a7e; Qx-OpenPlatform-Token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJGWUctSldUIiwiZXhwIjoxNjk3MDEyMTk5LCJpYXQiOjE2ODkyMzYxOTksInRva2VuIjoiQkFEODI3OEMxMEU4RTRGNURGRjhDMTc0MjAyNkQ3QzgwRTUwRERENTZFNjY0MjZBNTZBM0I0NDk5NEU2NThDMzkxQzdDMUEwQkNDRTEwNzM4MjY0QjQ2QjIxMDhDN0EwNUQzOTRERjk2QTUzMDUyNTEzRUREMDFGQzdEMzcyMDEzQTlFMjQ1MzkyMDE5RTE2QjIyRTc2Qjc2NjlDQUE5MjJDRDA5NTFDQjdGQ0U5Q0FGRDdGREZGMTQ2Q0MwNjA0QzI4MDE4QzI2QkY1QkUzQjkyNjBCRTk4MEYyMUNBODMwMUVCREQxNDYyNkVBNjkzNkEzM0ZDNzc2NEVGQThEQ0IyNDQ2QTdEN0I5NzZBMkY4ODMzNTQ5NEZFMjU5OTQ3NDVGQzkxRTgwNzdGNkMzOTBFM0I4MjU1NDZCRjVEMDRBNEU2RDMxMkI4OTQwMkI1NkNGRjc1NEEzQzI3OUJCODMyNjk2MzE5REI4QUQzMUFFMzE5REVDQTg2RUZFNEMyRUZDQUM1NjZEODdCRENFREUzNTc4NThDMEZCRkQ1NDc0NTFCNDVEQTQ0RUZCMzlGMkZENzJBNzgwMzE2NUY1QSJ9.dtup4cEBaHb2HPOE0H7Q96G2XSEeDnrzUpaKn6k4S1A; Hm_lpvt_4155e261820146fa5d82a7049a03a46a=1689236204")
+	req.Header.Set("Origin", "https://open.qingxun.com")
+	req.Header.Set("Referer", "https://open.qingxun.com/service/dictionariesAPI.html")
 	req.Header.Set("Sec-Fetch-Dest", "empty")
 	req.Header.Set("Sec-Fetch-Mode", "cors")
 	req.Header.Set("Sec-Fetch-Site", "same-origin")
@@ -299,12 +176,18 @@ func BaiduQuery(word string) {
 	if resp.StatusCode != http.StatusOK {
 		log.Fatal("bad StatusCode:", resp.StatusCode, "body", string(bodyText))
 	}
-	var bodyRespond BaiduDictRespond
+	var bodyRespond FanYiGoRespond
 	json.Unmarshal(bodyText, &bodyRespond)
-	fmt.Println("百度翻译结果如下：")
-	var symbol = bodyRespond.DictResult.SimpleMeans.Symbols[0]
-	fmt.Printf("%s UK: [%s] US: [%s]\n", word, symbol.PhEn, symbol.PhAm)
-	for _, part := range symbol.Parts {
+
+	mutex.Lock()
+	fmt.Println("翻译狗翻译结果如下：")
+	if bodyRespond.Code != SUCCESS {
+		fmt.Println("暂无翻译QAQ")
+		return
+	}
+	base := bodyRespond.Data.Dict.Base
+	fmt.Printf("%s UK: [%s] US: [%s]\n", word, base.PronEn.Text, base.PronAm.Text)
+	for _, part := range base.Explain.WordMeans {
 		fmt.Printf("%s ", part.Part)
 		for _, mean := range part.Means {
 			fmt.Printf("%s; ", mean)
@@ -313,7 +196,12 @@ func BaiduQuery(word string) {
 	}
 }
 
-func CaiYunQuery(word string) {
+func CaiYunQuery(word string, wg *sync.WaitGroup, mutex *sync.Mutex) {
+	defer func() {
+		wg.Done()
+		fmt.Println("-------------------------------------------")
+		mutex.Unlock()
+	}()
 	client := &http.Client{}
 	request := CaiYunDictRequest{TransType: "en2zh", Source: word}
 	buf, err := json.Marshal(request)
@@ -360,6 +248,7 @@ func CaiYunQuery(word string) {
 	if err != nil {
 		log.Fatal(err)
 	}
+	mutex.Lock()
 	fmt.Println("彩云小译翻译结果如下：")
 	fmt.Println(word, "UK:", dictResponse.Dictionary.Prons.En, "US:", dictResponse.Dictionary.Prons.EnUs)
 	for _, item := range dictResponse.Dictionary.Explanations {
@@ -370,15 +259,18 @@ func CaiYunQuery(word string) {
 func main() {
 	if len(os.Args) != 2 {
 		fmt.Fprintf(os.Stderr, `usage: simpleDict WORD
-example: simpleDict hello
-		`)
+	example: simpleDict hello
+			`)
 		os.Exit(1)
 	}
 	word := os.Args[1]
-	//CaiYunQuery(word)
-	BaiduQuery(word)
 
-	fmt.Println()
+	var wg = sync.WaitGroup{} // 同步，保证两个协程执行完毕才终止程序
+	var mutex = sync.Mutex{}  // 互斥，保证两个翻译引擎的翻译结果不交叉打印，即等一个翻译结果打印完了才打印另外一个
 
-	CaiYunQuery(word)
+	wg.Add(2)
+	go FanYiGoQuery(word, &wg, &mutex)
+	go CaiYunQuery(word, &wg, &mutex)
+
+	wg.Wait()
 }
